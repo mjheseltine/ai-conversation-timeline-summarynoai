@@ -51,9 +51,7 @@ body { background: var(--bg); margin: 20px; }
 .content { flex: 1; }
 
 .meta { font-size: 13px; color: var(--muted); }
-
 .name { font-weight: 700; margin-right: 6px; }
-
 .text { margin-top: 6px; font-size: 15px; line-height: 1.4; }
 
 .thumb {
@@ -78,7 +76,6 @@ body { background: var(--bg); margin: 20px; }
 }
 
 .actions button:hover { background: #f1f5f9; }
-
 .liked { color: #e0245e; }
 .retweeted { color: #17bf63; }
 
@@ -151,23 +148,6 @@ body { background: var(--bg); margin: 20px; }
 }
 
 #trendingList li:hover { text-decoration: underline; }
-
-/* AI SUMMARY (TIMELINE) */
-.ai-summary {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #fffdf8;
-  border: 1px solid #fbe5b3;
-  font-size: 14px;
-}
-
-.ai-summary .label {
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
 </style>
 </head>
 
@@ -259,17 +239,8 @@ function createPost(data) {
         ${data.handle} · ${data.timestamp}
       </div>
 
-     <div class="text">${data.text}</div>
-
-${data.image ? `<img src="${data.image}" class="thumb">` : ""}
-
-${data.aiSummary ? `
-  <div class="ai-summary">
-    <div class="label">AI Summary</div>
-    <div>${data.aiSummary}</div>
-  </div>
-` : ""}
-
+      <div class="text">${data.text}</div>
+      ${data.image ? `<img src="${data.image}" class="thumb">` : ""}
 
       <div class="actions">
         <button class="like ${state.liked ? "liked":""}">❤️ <span>${state.likes}</span></button>
@@ -419,7 +390,7 @@ document.getElementById("searchInput").addEventListener("input", e => {
 });
 
 // ---------- Trending ----------
-["#GovernmentShutdown","#Trump","#BreakingNews","#AI","#MediaBias","#Congress"]
+["#GovernmentShutdown","#Trump","#BreakingNews","#MediaBias","#Congress"]
 .forEach(tag => {
   const li = document.createElement("li");
   li.textContent = tag;
