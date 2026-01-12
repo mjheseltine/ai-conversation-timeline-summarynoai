@@ -17,9 +17,9 @@
 }
 
 body { background:var(--bg); margin:20px; }
-
 .container { max-width:800px; margin:auto; }
 
+/* NAV */
 .top-nav {
   position: sticky;
   top: 12px;
@@ -29,8 +29,11 @@ body { background:var(--bg); margin:20px; }
   margin-bottom: 16px;
 }
 
-
-
+.bottom-nav {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0 60px;
+}
 
 .home-btn {
   text-decoration:none;
@@ -41,6 +44,7 @@ body { background:var(--bg); margin:20px; }
   border-radius:20px;
 }
 
+/* POSTS */
 .post {
   background:var(--card);
   border-radius:var(--radius);
@@ -101,7 +105,6 @@ body { background:var(--bg); margin:20px; }
 }
 
 .actions button:hover { background:#f1f5f9; }
-
 .liked { color:#e0245e; }
 .retweeted { color:#17bf63; }
 
@@ -111,16 +114,14 @@ body { background:var(--bg); margin:20px; }
   border:1px solid #fbe5b3;
 }
 
-/* USER COMMENT HIGHLIGHT */
+/* USER COMMENT */
 .user-comment {
   background:#f0f7ff;
   border:1px solid #dbeafe;
 }
 
 /* COMMENT BOX */
-.comment-box {
-  margin-bottom:16px;
-}
+.comment-box { margin-bottom:16px; }
 
 .comment-box textarea {
   width:100%;
@@ -141,18 +142,10 @@ body { background:var(--bg); margin:20px; }
   font-weight:600;
   cursor:pointer;
 }
-  
-  .bottom-nav {
-  display: flex;
-  justify-content: center;
-  margin: 40px 0 60px;
-}
-
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
   <!-- TOP NAV -->
@@ -160,17 +153,13 @@ body { background:var(--bg); margin:20px; }
     <a class="home-btn" href="../index.html">← Return to timeline</a>
   </div>
 
+  <!-- THREAD -->
   <div id="thread"></div>
 
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
     <a class="home-btn" href="../index.html">← Return to timeline</a>
   </div>
-
-</div>
-
-
-  <div id="thread"></div>
 
 </div>
 
@@ -193,7 +182,6 @@ function colorFromName(name) {
 
 // ---------- Load ID + State ----------
 const postId = new URLSearchParams(location.search).get("id");
-
 let timelineState = JSON.parse(sessionStorage.getItem("timelineState") || "{}");
 
 const state = timelineState[postId] ||= {
@@ -210,8 +198,6 @@ function save() {
 }
 
 const thread = document.getElementById("thread");
-
-// ---------- Timing ----------
 const convoStart = Date.now();
 
 // ---------- Load Post ----------
@@ -228,26 +214,25 @@ fetch("../data/posts.json")
     }
 
     renderMainPost(post);
-    renderAISummary(post);
-    renderCommentBox();      // ⬅ MOVED HERE
+
+    if (post.aiSummary) {
+      renderAISummary(post);
+    }
+
+    renderCommentBox();
     post.replies.forEach(r => renderReply(r));
     renderUserComments();
   });
 
-// ---------- Render Main ----------
+// ---------- Renderers ----------
 function renderMainPost(p) {
   const el = document.createElement("article");
   el.className = "post";
 
   el.innerHTML = `
-    <div class="avatar" style="background:${colorFromName(p.author)}">
-      ${initials(p.author)}
-    </div>
+    <div class="avatar" style="background:${colorFromName(p.author)}">${initials(p.author)}</div>
     <div class="content">
-      <div class="meta">
-        <span class="name">${p.author}</span>
-        ${p.handle} · ${p.timestamp}
-      </div>
+      <div class="meta"><span class="name">${p.author}</span>${p.handle} · ${p.timestamp}</div>
       <div class="text">${p.text}</div>
       ${p.image ? `<img src="../${p.image}" class="thumb">` : ""}
       <div class="actions">
@@ -265,8 +250,7 @@ function renderMainPost(p) {
     state.likes += state.liked ? 1 : -1;
     el.querySelector(".like span").textContent = state.likes;
     save();
-
-    window.parent.postMessage({ type:"USER_LIKE", postId, count:state.likes }, "*");
+    window.parent.postMessage({ type:"USER_LIKE", postId }, "*");
   };
 
   el.querySelector(".retweet").onclick = () => {
@@ -274,81 +258,59 @@ function renderMainPost(p) {
     state.retweets += state.retweeted ? 1 : -1;
     el.querySelector(".retweet span").textContent = state.retweets;
     save();
-
-    window.parent.postMessage({ type:"USER_RETWEET", postId, count:state.retweets }, "*");
+    window.parent.postMessage({ type:"USER_RETWEET", postId }, "*");
   };
 }
 
-// ---------- AI Summary ----------
 function renderAISummary(p) {
   const el = document.createElement("article");
   el.className = "post ai-summary";
-
   el.innerHTML = `
     <div class="avatar">🤖</div>
     <div class="content">
-      <div class="name">AI Summary</div>
+      <div class="name">AI Context</div>
       <div class="text">${p.aiSummary}</div>
     </div>
   `;
-
   thread.appendChild(el);
 }
 
-// ---------- COMMENT BOX (MOVED) ----------
 function renderCommentBox() {
   const box = document.createElement("div");
   box.className = "comment-box";
-
   box.innerHTML = `
-    <textarea id="userReply" placeholder="Write a reply..."></textarea>
-    <button id="postReply">Reply</button>
+    <textarea placeholder="Write a reply..."></textarea>
+    <button>Reply</button>
   `;
-
   thread.appendChild(box);
 
-  box.querySelector("#postReply").onclick = () => {
-    const ta = box.querySelector("#userReply");
-    const txt = ta.value.trim();
+  box.querySelector("button").onclick = () => {
+    const txt = box.querySelector("textarea").value.trim();
     if (!txt) return;
-
     state.comments.push(txt);
     save();
-
-    window.parent.postMessage({
-      type:"USER_COMMENT",
-      postId,
-      text:txt
-    }, "*");
-
+    window.parent.postMessage({ type:"USER_COMMENT", postId, text:txt }, "*");
     location.reload();
   };
 }
 
-// ---------- Replies ----------
 function renderReply(r) {
   const el = document.createElement("article");
   el.className = "post";
-
   el.innerHTML = `
-    <div class="avatar" style="background:${colorFromName(r.author)}">
-      ${initials(r.author)}
-    </div>
+    <div class="avatar" style="background:${colorFromName(r.author)}">${initials(r.author)}</div>
     <div class="content">
       <div class="name">${r.author}</div>
       <div class="text">${r.text}</div>
     </div>
   `;
-
   thread.appendChild(el);
 }
 
-// ---------- User Comments ----------
 function renderUserComments() {
   state.comments.forEach(c => {
     const el = document.createElement("article");
     el.className = "post user-comment";
-
     el.innerHTML = `
       <div class="avatar" style="background:#2563eb">YOU</div>
       <div class="content">
@@ -356,34 +318,19 @@ function renderUserComments() {
         <div class="text">${c}</div>
       </div>
     `;
-
     thread.appendChild(el);
   });
 }
 
-// ---------- Scroll Depth ----------
+// ---------- Metrics ----------
 window.addEventListener("scroll", () => {
-  const depth = Math.round(
-    (window.scrollY + window.innerHeight) /
-    document.body.scrollHeight * 100
-  );
-
-  window.parent.postMessage({
-    type:"SCROLL_DEPTH_CONVO",
-    postId,
-    depth
-  }, "*");
+  const depth = Math.round((window.scrollY + window.innerHeight) / document.body.scrollHeight * 100);
+  window.parent.postMessage({ type:"SCROLL_DEPTH_CONVO", postId, depth }, "*");
 });
 
-// ---------- Time on Conversation ----------
 window.addEventListener("beforeunload", () => {
-  window.parent.postMessage({
-    type:"TIME_ON_CONVO",
-    postId,
-    ms:Date.now() - convoStart
-  }, "*");
+  window.parent.postMessage({ type:"TIME_ON_CONVO", postId, ms:Date.now() - convoStart }, "*");
 });
 </script>
-
 </body>
 </html>
