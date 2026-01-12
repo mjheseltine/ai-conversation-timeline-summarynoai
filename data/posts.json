@@ -1,0 +1,117 @@
+[
+  {
+    "id": "post1",
+    "author": "NewsWire",
+    "handle": "@newswire",
+    "text": "Breaking News: The U.S. military was attempting to intercept a Russian-flagged oil tanker that defied a blockade on Venezuela, Russian state media reported.",
+    "likes": 128,
+    "retweets": 34,
+    "timestamp": "1h",
+    "image": "images/post1_thumb.jpg",
+    "aiSummary": "U.S. forces attempted to stop a Russian oil tanker heading to Venezuela, escalating tensions amid sanctions. The move could complicate diplomacy while highlighting Russia’s defiance and U.S. enforcement capabilities.",
+    "replies": [
+      {
+        "author": "CivicsNerd",
+        "handle": "@civicsnerd",
+        "text": "Whoa, this is serious. Military interception shows how high tensions are getting. Wonder how Congress will react?"
+      },
+      {
+        "author": "HistoryBuff",
+        "handle": "@hbuff",
+        "text": "Russia defying blockades isn’t new, but this could be a diplomatic flashpoint."
+      },
+      {
+        "author": "PatriotTex",
+        "handle": "@patriot_tex",
+        "text": "Interesting. Shows the U.S. is willing to act to uphold sanctions."
+      }
+    ]
+  },
+
+  {
+    "id": "post2",
+    "author": "PoliticsDaily",
+    "handle": "@pol_daily",
+    "text": "Marjorie Taylor Greene’s district in northwest Georgia is considered safely Republican. However, her departure, coupled with the death of Rep. Doug LaMalfa (R-California) this week, has left Republicans clinging to a razor-thin House majority.",
+    "likes": 92,
+    "retweets": 18,
+    "timestamp": "2h",
+    "image": "images/post2_thumb.jpg",
+    "aiSummary": "Greene’s resignation and LaMalfa’s death leave Republicans with a 218–217 edge in the House, putting upcoming spending and shutdown negotiations in jeopardy. Key votes could hinge on a single member.",
+    "replies": [
+      {
+        "author": "TruthGuard",
+        "handle": "@truthguard",
+        "text": "A single vote majority makes all the difference. Shutdown talks will be tense."
+      },
+      {
+        "author": "Justice4All",
+        "handle": "@justice_watch",
+        "text": "Republicans now have almost no margin for error in passing bills. Every upcoming vote counts."
+      },
+      {
+        "author": "Watcher",
+        "handle": "@watcher",
+        "text": "Yikes, that’s a razor-thin majority. Any absence could flip the vote."
+      }
+    ]
+  },
+
+  {
+    "id": "post3",
+    "author": "wowsomuchpolitics",
+    "handle": "@pol_wow",
+    "text": "President Trump has repeated his interest in taking over Greenland, citing U.S. national security. Denmark's leader says such a move would be the end of NATO. Why does Trump want Greenland? Here's what to know.",
+    "likes": 98,
+    "retweets": 17,
+    "timestamp": "3h",
+    "image": "images/post3_thumb.jpg",
+    "aiSummary": "Trump reiterates Greenland acquisition interest, claiming strategic value, while Denmark warns it could jeopardize NATO. Analysts question feasibility, emphasizing political and logistical hurdles.",
+    "replies": [
+      {
+        "author": "Ant Hooper",
+        "handle": "@hooper",
+        "text": "Geopolitics aside, this is mostly a messaging move. NATO relations are at stake."
+      },
+      {
+        "author": "Andreas",
+        "handle": "@andre_as",
+        "text": "Even discussing Greenland in 2026 shows how presidential ambitions can create international headlines."
+      },
+      {
+        "author": "JimBoot",
+        "handle": "@jimboot",
+        "text": "Security claims vs. feasibility. This is more about political signaling than actual acquisition."
+      }
+    ]
+  },
+
+  {
+    "id": "post4",
+    "author": "USPolitics",
+    "handle": "@uspolitics",
+    "text": "The celebrated banjo player Béla Fleck announced that he had withdrawn from three concerts at the Kennedy Center, becoming the latest artist to forgo playing at the venue amid changes from the Trump administration.",
+    "likes": 101,
+    "retweets": 51,
+    "timestamp": "5h",
+    "image": "images/post4_thumb.jpg",
+    "aiSummary": "Béla Fleck cancels Kennedy Center shows, joining a string of artists responding to recent administrative changes. The move sparks debate over cultural leadership, artistic freedom, and federal support for the arts.",
+    "replies": [
+      {
+        "author": "RFKStan",
+        "handle": "@rfkfan",
+        "text": "Interesting to see artists push back against administrative shifts. Cultural institutions are in the spotlight."
+      },
+      {
+        "author": "Heritage83",
+        "handle": "@heritage83",
+        "text": "This is a sign of artists taking a stand on how federal policies impact performance and programming."
+      },
+      {
+        "author": "NYCInsider",
+        "handle": "@nyc_insider",
+        "text": "Kennedy Center audiences will feel the effect. Wonder who will fill these shows."
+      }
+    ]
+  }
+]
