@@ -394,12 +394,16 @@ document.getElementById("searchInput").addEventListener("input", e => {
 .forEach(tag => {
   const li = document.createElement("li");
   li.textContent = tag;
+
   li.onclick = () => {
-    searchInput.value = tag;
+    const query = tag.replace(/^#/, "").toLowerCase();
+    searchInput.value = query;
     searchInput.dispatchEvent(new Event("input"));
   };
+
   trendingList.appendChild(li);
 });
+
 
 // ---------- Weather ----------
 if (navigator.geolocation) {
