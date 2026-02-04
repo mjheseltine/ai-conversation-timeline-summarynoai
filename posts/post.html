@@ -19,7 +19,6 @@
 body { background:var(--bg); margin:20px; }
 .container { max-width:800px; margin:auto; }
 
-/* NAV */
 .top-nav {
   position: sticky;
   top: 12px;
@@ -27,12 +26,6 @@ body { background:var(--bg); margin:20px; }
   display: flex;
   align-items: center;
   margin-bottom: 16px;
-}
-
-.bottom-nav {
-  display: flex;
-  justify-content: center;
-  margin: 40px 0 60px;
 }
 
 .home-btn {
@@ -44,7 +37,6 @@ body { background:var(--bg); margin:20px; }
   border-radius:20px;
 }
 
-/* POSTS */
 .post {
   background:var(--card);
   border-radius:var(--radius);
@@ -67,15 +59,8 @@ body { background:var(--bg); margin:20px; }
 
 .content { flex:1; }
 
-.meta {
-  font-size:13px;
-  color:var(--muted);
-}
-
-.name {
-  font-weight:700;
-  margin-right:6px;
-}
+.meta { font-size:13px; color:var(--muted); }
+.name { font-weight:700; margin-right:6px; }
 
 .text {
   margin-top:6px;
@@ -97,31 +82,65 @@ body { background:var(--bg); margin:20px; }
 }
 
 .actions button {
-  background:none;
-  border:none;
-  cursor:pointer;
-  padding:4px 6px;
-  border-radius:6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 8px;
+  border-radius: 8px;
+
+  font-size: 14px;
+  line-height: 1;
+  font-weight: 600;
+
+  font-family: Inter,system-ui,-apple-system,"Segoe UI",Roboto,
+               "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji";
 }
 
 .actions button:hover { background:#f1f5f9; }
+
+.actions button span {
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 .liked { color:#e0245e; }
 .retweeted { color:#17bf63; }
 
-/* AI SUMMARY */
-.ai-summary {
-  background:#fffdf8;
-  border:1px solid #fbe5b3;
-}
-
-/* USER COMMENT */
+/* USER COMMENT HIGHLIGHT */
 .user-comment {
   background:#f0f7ff;
   border:1px solid #dbeafe;
 }
 
+/* SHOW MORE */
+.show-more-wrap {
+  display:flex;
+  justify-content:center;
+  margin: 6px 0 18px;
+}
+
+.show-more-btn {
+  background: #eef2ff;
+  color: #1f6feb;
+  border: 1px solid #c7d2fe;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.show-more-btn:hover { background:#e0e7ff; }
+
 /* COMMENT BOX */
-.comment-box { margin-bottom:16px; }
+.comment-box {
+  margin: 18px 0 16px;
+}
 
 .comment-box textarea {
   width:100%;
@@ -142,10 +161,17 @@ body { background:var(--bg); margin:20px; }
   font-weight:600;
   cursor:pointer;
 }
+
+.bottom-nav {
+  display:flex;
+  justify-content:center;
+  margin:40px 0 60px;
+}
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
   <!-- TOP NAV -->
@@ -153,8 +179,19 @@ body { background:var(--bg); margin:20px; }
     <a class="home-btn" href="../index.html">← Return to timeline</a>
   </div>
 
-  <!-- THREAD -->
+  <!-- MAIN POST -->
   <div id="thread"></div>
+
+  <!-- COMMENTS / REPLIES -->
+  <div id="comments"></div>
+
+  <!-- SHOW MORE BUTTON AREA -->
+  <div class="show-more-wrap" id="showMoreWrap" style="display:none;">
+    <button class="show-more-btn" id="showMoreBtn">Show more comments</button>
+  </div>
+
+  <!-- REPLY BOX (BOTTOM, ABOVE NAV) -->
+  <div id="replyBoxMount"></div>
 
   <!-- BOTTOM NAV -->
   <div class="bottom-nav">
@@ -182,15 +219,16 @@ function colorFromName(name) {
 
 // ---------- Load ID + State ----------
 const postId = new URLSearchParams(location.search).get("id");
+
 let timelineState = JSON.parse(sessionStorage.getItem("timelineState") || "{}");
 
-const state = timelineState[postId] ||= {
+const state = (timelineState[postId] ||= {
   likes:0,
   retweets:0,
   comments:[],
   liked:false,
   retweeted:false
-};
+});
 
 function save() {
   timelineState[postId] = state;
@@ -198,13 +236,24 @@ function save() {
 }
 
 const thread = document.getElementById("thread");
+const comments = document.getElementById("comments");
+const showMoreWrap = document.getElementById("showMoreWrap");
+const showMoreBtn = document.getElementById("showMoreBtn");
+const replyBoxMount = document.getElementById("replyBoxMount");
+
+// ---------- Timing ----------
 const convoStart = Date.now();
+
+// ---------- Config ----------
+const INITIAL_VISIBLE_REPLIES = 5;
+let hiddenReplyEls = [];
 
 // ---------- Load Post ----------
 fetch("../data/posts.json")
   .then(r => r.json())
   .then(posts => {
     const post = posts.find(p => p.id === postId);
+    if (!post) return;
 
     if (!state.initialized) {
       state.likes = post.likes || 0;
@@ -215,30 +264,35 @@ fetch("../data/posts.json")
 
     renderMainPost(post);
 
-    if (post.aiSummary) {
-      renderAISummary(post);
-    }
+    // Replies: first 5 visible, rest hidden behind Show more
+    renderRepliesWithShowMore(post.replies || []);
 
-    renderCommentBox();
-    post.replies.forEach(r => renderReply(r));
+    // User comments always visible after replies
     renderUserComments();
+
+    // Reply box at the very bottom
+    renderCommentBox();
   });
 
-// ---------- Renderers ----------
+// ---------- Render Main ----------
 function renderMainPost(p) {
   const el = document.createElement("article");
   el.className = "post";
 
   el.innerHTML = `
-    <div class="avatar" style="background:${colorFromName(p.author)}">${initials(p.author)}</div>
+    <div class="avatar" style="background:${colorFromName(p.author)}">
+      ${initials(p.author)}
+    </div>
     <div class="content">
-      <div class="meta"><span class="name">${p.author}</span>${p.handle} · ${p.timestamp}</div>
+      <div class="meta">
+        <span class="name">${p.author}</span>
+        ${p.handle} · ${p.timestamp}
+      </div>
       <div class="text">${p.text}</div>
       ${p.image ? `<img src="../${p.image}" class="thumb">` : ""}
       <div class="actions">
         <button class="like ${state.liked ? "liked":""}">❤️ <span>${state.likes}</span></button>
         <button class="retweet ${state.retweeted ? "retweeted":""}">🔁 <span>${state.retweets}</span></button>
-        <button class="comment">💬 <span>${p.replies.length + state.comments.length}</span></button>
       </div>
     </div>
   `;
@@ -248,69 +302,87 @@ function renderMainPost(p) {
   el.querySelector(".like").onclick = () => {
     state.liked = !state.liked;
     state.likes += state.liked ? 1 : -1;
+    el.querySelector(".like").classList.toggle("liked", state.liked);
     el.querySelector(".like span").textContent = state.likes;
     save();
-    window.parent.postMessage({ type:"USER_LIKE", postId }, "*");
+
+    window.parent.postMessage({ type:"USER_LIKE", postId, count:state.likes }, "*");
   };
 
   el.querySelector(".retweet").onclick = () => {
     state.retweeted = !state.retweeted;
     state.retweets += state.retweeted ? 1 : -1;
+    el.querySelector(".retweet").classList.toggle("retweeted", state.retweeted);
     el.querySelector(".retweet span").textContent = state.retweets;
     save();
-    window.parent.postMessage({ type:"USER_RETWEET", postId }, "*");
+
+    window.parent.postMessage({ type:"USER_RETWEET", postId, count:state.retweets }, "*");
   };
 }
 
-function renderAISummary(p) {
-  const el = document.createElement("article");
-  el.className = "post ai-summary";
-  el.innerHTML = `
-    <div class="avatar">🤖</div>
-    <div class="content">
-      <div class="name">AI Context</div>
-      <div class="text">${p.aiSummary}</div>
-    </div>
-  `;
-  thread.appendChild(el);
+// ---------- Replies with Show More ----------
+function renderRepliesWithShowMore(replies) {
+  hiddenReplyEls = [];
+
+  replies.forEach((r, idx) => {
+    const el = renderReply(r);
+
+    if (idx >= INITIAL_VISIBLE_REPLIES) {
+      el.style.display = "none";
+      hiddenReplyEls.push(el);
+    }
+
+    comments.appendChild(el);
+  });
+
+  if (hiddenReplyEls.length > 0) {
+    showMoreWrap.style.display = "flex";
+    showMoreBtn.textContent = `Show more comments (${hiddenReplyEls.length})`;
+    showMoreBtn.onclick = () => {
+      const revealedCount = hiddenReplyEls.length;
+
+      hiddenReplyEls.forEach(e => (e.style.display = ""));
+      hiddenReplyEls = [];
+      showMoreWrap.style.display = "none";
+
+      // ✅ Qualtrics tracking (still track show-more in control)
+      window.parent.postMessage({
+        type: "SHOW_MORE_COMMENTS",
+        postId,
+        revealedCount
+      }, "*");
+    };
+  } else {
+    showMoreWrap.style.display = "none";
+  }
 }
 
-function renderCommentBox() {
-  const box = document.createElement("div");
-  box.className = "comment-box";
-  box.innerHTML = `
-    <textarea placeholder="Write a reply..."></textarea>
-    <button>Reply</button>
-  `;
-  thread.appendChild(box);
-
-  box.querySelector("button").onclick = () => {
-    const txt = box.querySelector("textarea").value.trim();
-    if (!txt) return;
-    state.comments.push(txt);
-    save();
-    window.parent.postMessage({ type:"USER_COMMENT", postId, text:txt }, "*");
-    location.reload();
-  };
-}
-
+// ---------- Render Reply ----------
 function renderReply(r) {
   const el = document.createElement("article");
   el.className = "post";
+
   el.innerHTML = `
-    <div class="avatar" style="background:${colorFromName(r.author)}">${initials(r.author)}</div>
+    <div class="avatar" style="background:${colorFromName(r.author)}">
+      ${initials(r.author)}
+    </div>
     <div class="content">
-      <div class="name">${r.author}</div>
+      <div class="meta">
+        <span class="name">${r.author}</span> ${r.handle || ""}
+      </div>
       <div class="text">${r.text}</div>
     </div>
   `;
-  thread.appendChild(el);
+
+  return el;
 }
 
+// ---------- User Comments ----------
 function renderUserComments() {
   state.comments.forEach(c => {
     const el = document.createElement("article");
     el.className = "post user-comment";
+
     el.innerHTML = `
       <div class="avatar" style="background:#2563eb">YOU</div>
       <div class="content">
@@ -318,19 +390,64 @@ function renderUserComments() {
         <div class="text">${c}</div>
       </div>
     `;
-    thread.appendChild(el);
+
+    comments.appendChild(el);
   });
 }
 
-// ---------- Metrics ----------
+// ---------- Comment Box (bottom) ----------
+function renderCommentBox() {
+  const box = document.createElement("div");
+  box.className = "comment-box";
+
+  box.innerHTML = `
+    <textarea id="userReply" placeholder="Write a reply..."></textarea>
+    <button id="postReply">Reply</button>
+  `;
+
+  replyBoxMount.appendChild(box);
+
+  box.querySelector("#postReply").onclick = () => {
+    const ta = box.querySelector("#userReply");
+    const txt = ta.value.trim();
+    if (!txt) return;
+
+    state.comments.push(txt);
+    save();
+
+    window.parent.postMessage({
+      type:"USER_COMMENT",
+      postId,
+      text:txt
+    }, "*");
+
+    location.reload();
+  };
+}
+
+// ---------- Scroll Depth ----------
 window.addEventListener("scroll", () => {
-  const depth = Math.round((window.scrollY + window.innerHeight) / document.body.scrollHeight * 100);
-  window.parent.postMessage({ type:"SCROLL_DEPTH_CONVO", postId, depth }, "*");
+  const depth = Math.round(
+    (window.scrollY + window.innerHeight) /
+    document.body.scrollHeight * 100
+  );
+
+  window.parent.postMessage({
+    type:"SCROLL_DEPTH_CONVO",
+    postId,
+    depth
+  }, "*");
 });
 
+// ---------- Time on Conversation ----------
 window.addEventListener("beforeunload", () => {
-  window.parent.postMessage({ type:"TIME_ON_CONVO", postId, ms:Date.now() - convoStart }, "*");
+  window.parent.postMessage({
+    type:"TIME_ON_CONVO",
+    postId,
+    ms:Date.now() - convoStart
+  }, "*");
 });
 </script>
+
 </body>
 </html>
