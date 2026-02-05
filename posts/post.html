@@ -185,12 +185,12 @@ body { background:var(--bg); margin:20px; }
   <!-- COMMENTS / REPLIES -->
   <div id="comments"></div>
 
-  <!-- SHOW MORE BUTTON AREA -->
+  <!-- SHOW MORE -->
   <div class="show-more-wrap" id="showMoreWrap" style="display:none;">
     <button class="show-more-btn" id="showMoreBtn">Show more comments</button>
   </div>
 
-  <!-- REPLY BOX (BOTTOM, ABOVE NAV) -->
+  <!-- REPLY BOX -->
   <div id="replyBoxMount"></div>
 
   <!-- BOTTOM NAV -->
@@ -263,14 +263,8 @@ fetch("../data/posts.json")
     }
 
     renderMainPost(post);
-
-    // Replies: first 5 visible, rest hidden behind Show more
     renderRepliesWithShowMore(post.replies || []);
-
-    // User comments always visible after replies
     renderUserComments();
-
-    // Reply box at the very bottom
     renderCommentBox();
   });
 
@@ -305,7 +299,6 @@ function renderMainPost(p) {
     el.querySelector(".like").classList.toggle("liked", state.liked);
     el.querySelector(".like span").textContent = state.likes;
     save();
-
     window.parent.postMessage({ type:"USER_LIKE", postId, count:state.likes }, "*");
   };
 
@@ -315,12 +308,11 @@ function renderMainPost(p) {
     el.querySelector(".retweet").classList.toggle("retweeted", state.retweeted);
     el.querySelector(".retweet span").textContent = state.retweets;
     save();
-
     window.parent.postMessage({ type:"USER_RETWEET", postId, count:state.retweets }, "*");
   };
 }
 
-// ---------- Replies with Show More ----------
+// ---------- Replies ----------
 function renderRepliesWithShowMore(replies) {
   hiddenReplyEls = [];
 
@@ -339,21 +331,15 @@ function renderRepliesWithShowMore(replies) {
     showMoreWrap.style.display = "flex";
     showMoreBtn.textContent = `Show more comments (${hiddenReplyEls.length})`;
     showMoreBtn.onclick = () => {
-      const revealedCount = hiddenReplyEls.length;
-
       hiddenReplyEls.forEach(e => (e.style.display = ""));
       hiddenReplyEls = [];
       showMoreWrap.style.display = "none";
 
-      // ✅ Qualtrics tracking (still track show-more in control)
       window.parent.postMessage({
         type: "SHOW_MORE_COMMENTS",
-        postId,
-        revealedCount
+        postId
       }, "*");
     };
-  } else {
-    showMoreWrap.style.display = "none";
   }
 }
 
@@ -373,7 +359,6 @@ function renderReply(r) {
       <div class="text">${r.text}</div>
     </div>
   `;
-
   return el;
 }
 
@@ -390,12 +375,11 @@ function renderUserComments() {
         <div class="text">${c}</div>
       </div>
     `;
-
     comments.appendChild(el);
   });
 }
 
-// ---------- Comment Box (bottom) ----------
+// ---------- Comment Box ----------
 function renderCommentBox() {
   const box = document.createElement("div");
   box.className = "comment-box";
